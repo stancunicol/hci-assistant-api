@@ -24,7 +24,9 @@ var keyVaultName = builder.Configuration
 var secretsPrefix = builder.Configuration 
    [$"AppConfigurations{ConfigurationPath.KeyDelimiter}SecretsPrefix"]; 
 
+// TEMPORARILY DISABLED Key Vault for troubleshooting Azure deployment
 // Use Key Vault only in production (Azure), skip in Development
+/*
 if (!builder.Environment.IsDevelopment() && !string.IsNullOrWhiteSpace(keyVaultName) && !string.IsNullOrWhiteSpace(secretsPrefix))
 {
     var keyVaultUri = new Uri( 
@@ -36,6 +38,7 @@ if (!builder.Environment.IsDevelopment() && !string.IsNullOrWhiteSpace(keyVaultN
         new CustomSecretManager(secretsPrefix) 
     ); 
 }
+*/
 
 // Configure values based on appsettings.json 
 builder.Services.Configure<SecretsService>(builder.Configuration.GetSection("Secrets")); 
