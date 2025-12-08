@@ -19,8 +19,14 @@ public class AIAssistantService : IAIAssistantService
         var key = _secretsService.AIAssistantSecrets?.Key;
         _id = _secretsService.AIAssistantSecrets?.Id;
         
+        // Debug logging
+        Console.WriteLine($"DEBUG EndPoint: '{endPoint}'");
+        Console.WriteLine($"DEBUG Key: '{key}'");
+        Console.WriteLine($"DEBUG ID: '{_id}'");
+        
         if (string.IsNullOrWhiteSpace(endPoint) || string.IsNullOrWhiteSpace(key) || string.IsNullOrWhiteSpace(_id))
         {
+            Console.WriteLine("DEBUG: One or more values are null/empty");
             _assistantsClient = null;
             return;
         }
