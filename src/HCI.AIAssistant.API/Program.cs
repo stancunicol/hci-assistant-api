@@ -2,30 +2,40 @@ using HCI.AIAssistant.API.Services;
 using Microsoft.Extensions.Options;
 using HCI.AIAssistant.API.Managers;
 using Azure.Identity;
+using Microsoft.AspNetCore.HttpOverrides;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(name: "CORS",
+    policy =>
+    {
+        policy
+        .AllowAnyHeader()
+        .AllowAnyMethod()
+        .AllowAnyOrigin();
+    });
+});
 
 // Replace appsettings.json values with Key Vault values 
 var keyVaultName = builder.Configuration 
   [$"AppConfigurations{ConfigurationPath.KeyDelimiter}KeyVaultName"]; 
 var secretsPrefix = builder.Configuration 
    [$"AppConfigurations{ConfigurationPath.KeyDelimiter}SecretsPrefix"]; 
-if (string.IsNullOrWhiteSpace(keyVaultName)) 
-{ 
-    throw new ArgumentNullException("KeyVaultName", "KeyVaultName is missing."); 
-} 
-if (string.IsNullOrWhiteSpace(secretsPrefix)) 
-{ 
-    throw new ArgumentNullException("SecretsPrefix", "SecretsPrefix is missing."); 
-} 
-var keyVaultUri = new Uri( 
-    $"https://{keyVaultName}.vault.azure.net/" 
-); 
-builder.Configuration.AddAzureKeyVault( 
-    keyVaultUri, 
-    new DefaultAzureCredential(), 
-    new CustomSecretManager(secretsPrefix) 
-); 
+
+// Use Key Vault only in production (Azure), skip in Development
+if (!builder.Environment.IsDevelopment() && !string.IsNullOrWhiteSpace(keyVaultName) && !string.IsNullOrWhiteSpace(secretsPrefix))
+{
+    var keyVaultUri = new Uri( 
+        $"https://{keyVaultName}.vault.azure.net/" 
+    ); 
+    builder.Configuration.AddAzureKeyVault( 
+        keyVaultUri, 
+        new DefaultAzureCredential(), 
+        new CustomSecretManager(secretsPrefix) 
+    ); 
+}
 
 // Configure values based on appsettings.json 
 builder.Services.Configure<SecretsService>(builder.Configuration.GetSection("Secrets")); 
@@ -51,6 +61,8 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
+app.UseCors("CORS");
+
 // Configure the HTTP request pipeline.
 //if (app.Environment.IsDevelopment())
 //{
@@ -58,10 +70,10 @@ app.UseSwagger();
 app.UseSwaggerUI();
 //}
 
-if(app.Environment.IsProduction())
-{
+// if(app.Environment.IsProduction())
+// {
     app.UseHttpsRedirection();
-}
+//}
 
 app.UseAuthorization();
 
